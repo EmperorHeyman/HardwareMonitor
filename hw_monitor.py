@@ -8,8 +8,9 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                              QButtonGroup, QComboBox, QMessageBox, QScrollArea,
                              QSystemTrayIcon, QAction, QMenu, QStyle)
 from PyQt5.QtCore import QTimer, Qt, pyqtSignal
-from PyQt5.QtGui import QFont, QColor, QPalette, QIcon
+from PyQt5.QtGui import QFont, QColor, QPalette, QIcon, QPixmap
 import qdarktheme
+import base64
 
 # Attempt to import pynvml for NVIDIA GPU monitoring
 try:
@@ -48,6 +49,11 @@ except Exception as e:
 # --- Settings file paths ---
 APP_NAME = "R.A.P.L. GROUP Monitor"
 SETTINGS_FILE_NAME = "settings.json"
+BASE64_APP_ICON_DATA= """
+AAABAAEAICAAAAEAIACoEAAAFgAAACgAAAAgAAAAQAAAAAEAIAAAAAAAABAAABMLAAATCwAAAAAAAAAAAAB3ZVf/d2VX/3hmWP9zYVT/Ni0n/y4nIf8vKCL/MCgi/0g9NP8xKSP/Lygi/y4nIv80LCX/cF9S/3lmWP92ZFb/fGlb/01BOP8rJB//MSkj/ywlIP9CODD/PTMs/ywmIP8wKSP/KyQf/1hKQP98aVv/dmRW/3dlV/93ZVf/d2VX/3dlV/92ZVf/eWdZ/29eUf8IBwb/AAAA/wEBAP8AAAD/JB8a/wEBAf8AAAD/AAAA/wQEA/9qWk7/emhZ/3RjVf9/bF3/LSYh/wAAAP8DAgL/AAAA/xoWE/8TEA7/AAAA/wMCAv8AAAD/QDYv/4BsXf91Y1b/d2VX/3dlV/93ZVf/d2VX/3dlV/94Zlj/cWBT/yMeGv8EBAP/AAAA/w8NC/8+NS3/ExAO/wAAAP8EAwP/IBsX/25eUP95Z1n/dWNW/31qW/9CODD/CQgH/wAAAP8BAQH/Mysl/yojH/8AAAD/AQEB/w0LCv9QRDv/fWpb/3ZkVv93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/94Zlf/eWdZ/xUSD/8AAAD/PjUt/4t2Zf9GPDT/AAAA/w8NC/92ZFb/eWZY/3dlV/93ZVf/dWNW/4FuXv8uJyH/AAAA/wMCAv9vXlH/XE5D/wAAAP8AAAD/QTcv/4FuXv91Y1X/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/92ZFf/FBEP/wAAAP88Myz/h3Ji/0Q6Mv8AAAD/DwwL/3JgVP94Zlj/d2VX/3dlV/93ZVf/eGZY/xYSEP8AAAD/AAAA/0o+Nv83Lyn/AAAA/wAAAP8mIBz/fWpc/3ZkVv93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3ZlV/8UEQ//AAAA/z0zLP+Ic2P/RToy/wAAAP8PDAv/c2FU/3hmWP93ZVf/dmRX/3pnWf9sW0//BgUE/wAAAP8AAAD/FxMR/xEODP8AAAD/AAAA/xIQDf92ZFb/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/dmVX/xQRD/8AAAD/PTMs/4hzY/9FOjL/AAAA/w8MC/9zYVT/eGZY/3dlV/92ZFb/fWpb/1lMQf8AAAD/AQEB/wEBAP8AAAD/AAAA/wEBAf8AAAD/AwMC/2hZTP96aFr/dmRW/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/92ZVf/EhAN/wAAAP8MCgj/GBUR/w0LCf8AAAD/DQsK/3NhVP94Zlj/d2VX/3VjVv9/bF3/Qzkx/wAAAP8LCgj/CQgH/wAAAP8AAAD/DAoJ/wcGBf8AAAD/VUg+/35rXP91ZFb/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3ZlV/8SDw3/AAAA/wEBAf8AAAD/AQEB/wAAAP8NCwn/c2FU/3hmWP93ZVf/dWRW/35rXP8tJiH/AAAA/y0mIf84Lyn/AAAA/wAAAP9EOjL/HRkV/wAAAP8/Ni7/gGxd/3VjVv93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/dmVX/xMQDv8AAAD/IBsX/0Y7M/8kHhr/AAAA/w4MCv9zYVT/eGZY/3ZlV/93ZVf/eGZY/xgUEv8AAAD/QTcv/2tbTv8AAAD/CAcG/3ZkVv8sJSD/AAAA/ygiHf9+a1z/dmRW/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/92ZVf/FBEP/wAAAP9BNy//kntq/0o+Nv8AAAD/Dw0L/3NhVP94Zlj/dmRW/3pnWf9sXE//BwYF/wAAAP9RRTv/hXFh/xkVEv8sJSD/iXRk/z41Lv8AAAD/FBEP/3ZkVv93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3ZkVv8UEQ7/AAAA/zsyK/+FcGH/Qzkx/wAAAP8PDAv/cmBT/3hmWP91ZFb/fGlb/1lMQf8AAAD/AgIC/2RVSf+Cbl//U0c9/1xPRP+Db2D/VUg+/wAAAP8EBAP/aFhM/3pnWf92ZFb/d2VX/3dlV/93ZVf/d2VX/3dlV/94Zlf/e2hZ/xUSD/8AAAD/PzUu/4x3Zv9HPTT/AAAA/w8NC/93ZVf/eWZY/3RjVf+EcGD/RTsz/wAAAP8TEA7/eGZY/3dlV/95Z1n/eGZY/3pnWf9uXVD/BgUE/wAAAP9YS0D/gW5e/3VjVv93ZVf/d2VX/3dlV/93ZVf/d2VX/3ZkVv9iVEj/EA4M/wAAAP8yKiT/dmVW/zgwKf8AAAD/DAoJ/19RRf92ZFb/dmRW/2tbT/8lIBv/AAAA/xwYFP9rXE//d2VX/3ZkVv92ZFf/d2VX/2NVSf8PDQv/AAAA/zQsJv9vX1H/d2VX/3dlV/93ZVf/d2VX/3ZlV/95Z1n/b15R/wgHBv8AAAD/AQEA/wAAAP8lIBv/AgEB/wAAAP8AAAD/BQQD/2taTv97aFr/FBEP/wAAAP8CAgL/AAAA/x8aF/98aVv/dmRW/3hmV/91Y1X/EA4M/wAAAP8CAgL/AAAA/ychHP9+a1z/dmRW/3dlV/93ZVf/dmVX/3lnWf9vXlH/CAcG/wAAAP8BAQH/AAAA/yUfG/8CAQH/AAAA/wAAAP8EBAP/a1pO/3toWv8UEQ//AAAA/wICAv8AAAD/HxoW/3xpW/92ZFb/eGZX/3VjVf8QDgz/AAAA/wICAv8AAAD/JyEc/35rXP92ZFb/d2VX/3dlV/93ZVf/d2VX/3ZkVv9hUkb/X1BF/19QRf9fUEX/Z1dL/19QRf9fUEX/X1BF/2BRRv91Y1X/eGZY/2NUSP9eT0T/YFBF/15PRP9mVkr/eGZY/3dlV/93ZVf/d2VX/2JTSP9eT0T/YFBF/11PRP9nV0v/eGZY/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3xpW/98aVv/fGlb/3xpW/96aFr/fGlb/3xpW/98aVv/fGlb/3hlV/93ZVf/e2ha/3xpW/98aVv/fGlb/3toWv93ZVf/d2VX/3dlV/93ZVf/e2ha/3xpW/98aVv/fGlb/3poWv93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/dmRW/3ZkVv92ZFb/dmRW/3ZkVv92ZFb/dmRW/3ZkVv92ZFb/d2VX/3dlV/92ZFb/dmRW/3ZkVv92ZFb/dmRW/3dlV/93ZVf/d2VX/3dlV/92ZFb/dmRW/3ZkVv92ZFb/dmRW/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3dlV/93ZVf/d2VX/3VjVv91Y1b/dmRX/3dlV/93ZVf/d2VX/3dlV/93ZVf/dmRX/3VjVv91Y1b/dmRX/3dlV/93ZVf/d2VX/3d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
+"""
+
+
 
 def get_settings_path():
     """Returns the full path to the settings file."""
@@ -74,6 +80,10 @@ class SettingsDialog(QDialog):
         self.setWindowTitle("Settings")
         self.setGeometry(200, 200, 450, 600)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        APP_ICON_PIXMAP = QPixmap()
+        APP_ICON_PIXMAP.loadFromData(base64.b64decode(BASE64_APP_ICON_DATA))
+        APP_ICON = QIcon(APP_ICON_PIXMAP)
+        self.setWindowIcon(QIcon(APP_ICON))
 
         self.initial_settings = initial_settings if initial_settings else {}
         self.current_visibility_settings = self.initial_settings.get('visibility', {})
@@ -348,23 +358,13 @@ class SystemMonitorApp(QWidget):
     def create_tray_icon(self):
         self.tray_icon = QSystemTrayIcon(self)
         
-        # Try to load a specific SVG icon from qdarktheme's resources.
-        # This path works if qdarktheme is installed and its resources are accessible.
-        # Otherwise, fall back to a standard QStyle icon.
-        # Note: ":/qdarktheme/themes/light_gray/light_gear.svg" is a QRC path, which
-        # typically works with Qt's resource system if qdarktheme resources are compiled.
-        # For a more robust direct file access, you might need to extract the SVG from the package.
-        # For simplicity here, sticking to QRC path for qdarktheme icons if they are set up.
-        
-        # Fallback to standard system icon if qdarktheme's SVG loading fails or path is invalid
-        try:
-            # Attempt to use qdarktheme's icon loading if available and working
-            icon = QIcon(qdarktheme.load_svg("light_gear.svg"))
-        except Exception:
-            # Fallback to a standard Qt icon
-            icon = QApplication.style().standardIcon(QStyle.SP_ComputerIcon)
-            
-        self.tray_icon.setIcon(icon)
+
+        APP_ICON_PIXMAP = QPixmap()
+        APP_ICON_PIXMAP.loadFromData(base64.b64decode(BASE64_APP_ICON_DATA))
+        APP_ICON = QIcon(APP_ICON_PIXMAP)
+        # Attempt to use qdarktheme's icon loading if available and working
+        self.tray_icon.setIcon(APP_ICON) # Use the global icon
+
         self.tray_icon.setToolTip(APP_NAME)
 
         menu = QMenu()
@@ -373,7 +373,7 @@ class SystemMonitorApp(QWidget):
         menu.addAction(open_settings_action)
 
         exit_action = QAction("Exit", self)
-        exit_action.triggered.connect(self.close)
+        exit_action.triggered.connect(QApplication.instance().quit)
         menu.addAction(exit_action)
 
         self.tray_icon.setContextMenu(menu)
@@ -445,7 +445,7 @@ class SystemMonitorApp(QWidget):
 
         self.close_btn = QPushButton("X")
         self.close_btn.setFixedSize(25, 25)
-        self.close_btn.clicked.connect(self.close)
+        self.close_btn.clicked.connect(QApplication.instance().quit)
         self.close_btn.setToolTip("Close Application")
         self.close_btn.setStyleSheet("""
             QPushButton {
