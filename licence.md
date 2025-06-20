@@ -21,4 +21,4 @@ This software, "R.A.P.L. GROUP System Monitor," is provided free to use, distrib
 
 We encourage attribution but it is not strictly required. If you find this software useful, feel free to mention "R.A.P.L. GROUP" in your projects or share our work.
 
-Copyright (c) 2024 R.A.P.L. GROUP
+Copyright (c) 2025 R.A.P.L. GROUP
