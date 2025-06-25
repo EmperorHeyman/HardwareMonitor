@@ -1,2 +1,3 @@
 *.pyc
 old.hw_monitor.py
+version-file.rc

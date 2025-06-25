@@ -64,13 +64,20 @@ class SystemMonitorApp(QWidget):
         self.settings = {
             'refresh_interval': 1500, 'opacity': 1.0, 'always_on_top': True,
             'click_through': False, 'theme': 'dark', 'first_run_completed': False,
-            'visibility': {
+            'window_pos_x': None, 'window_pos_y': None,
+            'visibility': { 
                 'cpu_group': True, 'ram_group': True, 'gpu_groups': True,
                 'cpu_usage': True, 'cpu_temp': True, 'cpu_freq': True,
                 'gpu_usage': True, 'gpu_temp': True, 'gpu_vram': True
             }
         }
         self.load_settings()
+
+        # Restore window position if available from settings
+        pos_x = self.settings.get('window_pos_x')
+        pos_y = self.settings.get('window_pos_y')
+        if pos_x is not None and pos_y is not None:
+            self.move(pos_x, pos_y)
 
         # For window dragging
         self._start_pos = None
@@ -85,6 +92,7 @@ class SystemMonitorApp(QWidget):
         self.setWindowOpacity(self.settings['opacity'])
         self.update_click_through(self.settings['click_through'])
         self.apply_visibility_settings(self.settings['visibility'])
+        self.adjustSize()
 
         # 3. Set up the rest of the application components.
         self.create_tray_icon()
@@ -198,11 +206,11 @@ class SystemMonitorApp(QWidget):
         else:
             self.settings['first_run_completed'] = False
 
-    def save_settings(self):
+    def save_settings(self,move =False):
         settings_path = get_settings_path()
         settings_to_save = self.settings.copy()
         # Don't save click-through state to avoid starting in an uninteractive mode
-        if 'click_through' in settings_to_save:
+        if 'click_through' in settings_to_save and move == False:
             del settings_to_save['click_through']
         try:
             with open(settings_path, 'w') as f:
@@ -391,12 +399,19 @@ class SystemMonitorApp(QWidget):
         if not self.settings['click_through'] and self._start_pos and event.buttons() == Qt.LeftButton:
             self.move(event.globalPos() - self._start_pos)
             event.accept()
+            self.settings['window_pos_x'] = self.pos().x()
+            self.settings['window_pos_y'] = self.pos().y()
+            self.save_settings(move=True)
 
     def mouseReleaseEvent(self, event):
         self._start_pos = None
         event.accept()
     
     def closeEvent(self, event):
+        # Store current window position before saving settings
+        self.settings['window_pos_x'] = self.pos().x()
+        self.settings['window_pos_y'] = self.pos().y()
+
         self.save_settings()
         if NVML_AVAILABLE:
             try:
