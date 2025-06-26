@@ -369,23 +369,38 @@ class SystemMonitorApp(QWidget):
 
         try:
             if enable:
+                # This is the critical change. We build a raw command string
+                # that uses a mix of quotes to protect the path argument.
+                # The /tr argument is formatted as '"C:\Path\To\Your App.exe"'
+                # This complex quoting is often necessary for schtasks.
+                command_create = f'schtasks /create /tn "{TASK_NAME}" /tr \'"{dest_path}"\' /sc onlogon /rl highest /f'
+
                 if source_path.lower() != dest_path.lower():
                     os.makedirs(install_dir, exist_ok=True)
                     shutil.copy(source_path, dest_path)
-                    command = f'schtasks /create /tn "{TASK_NAME}" /tr "\"{dest_path}\"" /sc onlogon /rl highest /f'
-                    subprocess.run(command, check=True, shell=True, capture_output=True)
+                    
+                    # We run this command using shell=True, as it's a raw string for cmd.exe
+                    subprocess.run(command_create, check=True, shell=True, capture_output=True, text=True)
+                    
                     QMessageBox.information(self, "Restarting Application", f"App moved to:\n{dest_path}\n\nIt will now restart from the new location.")
                     subprocess.Popen([dest_path])
                     QApplication.instance().quit()
                 else:
-                    command = f'schtasks /create /tn "{TASK_NAME}" /tr "\"{dest_path}\"" /sc onlogon /rl highest /f'
-                    subprocess.run(command, check=True, shell=True, capture_output=True)
+                    subprocess.run(command_create, check=True, shell=True, capture_output=True, text=True)
+                    QMessageBox.information(self, "Startup Enabled", "The application is now set to run on startup.")
+
             else:
-                command = f'schtasks /delete /tn "{TASK_NAME}" /f'
-                subprocess.run(command, check=True, shell=True, capture_output=True)
+                # The delete command is simpler and less prone to quoting issues.
+                command_delete = f'schtasks /delete /tn "{TASK_NAME}" /f'
+                subprocess.run(command_delete, check=True, shell=True, capture_output=True, text=True)
                 QMessageBox.information(self, "Startup Disabled", "Startup task has been removed.")
+
+        except subprocess.CalledProcessError as e:
+            error_message = e.stderr if e.stderr else str(e)
+            QMessageBox.critical(self, "Task Scheduler Error", f"Failed to modify startup task:\n{error_message}")
+            revert_checkbox()
         except Exception as e:
-            QMessageBox.critical(self, "Task Scheduler Error", f"Failed to modify startup task: {e}")
+            QMessageBox.critical(self, "An Error Occurred", f"An unexpected error occurred: {e}")
             revert_checkbox()
 
     # --- Window Events ---
