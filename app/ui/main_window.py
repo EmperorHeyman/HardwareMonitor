@@ -372,13 +372,13 @@ class SystemMonitorApp(QWidget):
                 if source_path.lower() != dest_path.lower():
                     os.makedirs(install_dir, exist_ok=True)
                     shutil.copy(source_path, dest_path)
-                    command = f'schtasks /create /tn "{TASK_NAME}" /tr "{dest_path}" /sc onlogon /rl highest /f'
+                    command = f'schtasks /create /tn "{TASK_NAME}" /tr "\"{dest_path}\"" /sc onlogon /rl highest /f'
                     subprocess.run(command, check=True, shell=True, capture_output=True)
                     QMessageBox.information(self, "Restarting Application", f"App moved to:\n{dest_path}\n\nIt will now restart from the new location.")
                     subprocess.Popen([dest_path])
                     QApplication.instance().quit()
                 else:
-                    command = f'schtasks /create /tn "{TASK_NAME}" /tr "{dest_path}" /sc onlogon /rl highest /f'
+                    command = f'schtasks /create /tn "{TASK_NAME}" /tr "\"{dest_path}\"" /sc onlogon /rl highest /f'
                     subprocess.run(command, check=True, shell=True, capture_output=True)
             else:
                 command = f'schtasks /delete /tn "{TASK_NAME}" /f'

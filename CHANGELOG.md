@@ -1,3 +1,8 @@
+### Changelog - Version 1.3.1
+### Fixed
+
+- Task Scheduler app path correction
+
 ### Changelog - Version 1.3
 
 This update introduces bug fixes and new features.
